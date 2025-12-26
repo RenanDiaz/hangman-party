@@ -1,6 +1,6 @@
 <script lang="ts">
+	import { t } from 'svelte-i18n';
 	import type { GameConfig, GameMode, Category, Difficulty } from '$lib/types/game';
-	import { CATEGORY_NAMES, DIFFICULTY_NAMES } from '$lib/data/words';
 
 	interface Props {
 		config: GameConfig;
@@ -12,14 +12,38 @@
 
 	let { config, isHost, playerCount, onConfigChange, onStartGame }: Props = $props();
 
-	const MODES: { value: GameMode; label: string; description: string; minPlayers: number }[] = [
-		{ value: 'single', label: '🎮 Un Jugador', description: 'Juega solo contra la computadora', minPlayers: 1 },
-		{ value: 'team', label: '👥 Equipo', description: 'Todos colaboran para adivinar la palabra', minPlayers: 2 },
-		{ value: 'competitive', label: '🏆 Competitivo', description: 'Cada jugador adivina su propia palabra', minPlayers: 2 }
+	interface ModeConfig {
+		value: GameMode;
+		icon: string;
+		key: string;
+		descKey: string;
+		minPlayers: number;
+	}
+
+	const MODES: ModeConfig[] = [
+		{ value: 'single', icon: '🎮', key: 'config.singlePlayer', descKey: 'config.singlePlayerDesc', minPlayers: 1 },
+		{ value: 'team', icon: '👥', key: 'config.teamMode', descKey: 'config.teamModeDesc', minPlayers: 2 },
+		{ value: 'competitive', icon: '🏆', key: 'config.competitiveMode', descKey: 'config.competitiveModeDesc', minPlayers: 2 }
 	];
 
-	const CATEGORIES = Object.entries(CATEGORY_NAMES) as [Category, string][];
-	const DIFFICULTIES = Object.entries(DIFFICULTY_NAMES) as [Difficulty, string][];
+	const categoryKeys = ['animales', 'paises', 'peliculas', 'comida', 'deportes', 'profesiones', 'tecnologia', 'mix'];
+	const categoryIcons: Record<string, string> = {
+		animales: '🐾',
+		paises: '🌍',
+		peliculas: '🎬',
+		comida: '🍕',
+		deportes: '⚽',
+		profesiones: '👨‍⚕️',
+		tecnologia: '💻',
+		mix: '🎲'
+	};
+
+	const difficultyKeys = ['facil', 'medio', 'dificil'];
+	const difficultyIcons: Record<string, string> = {
+		facil: '😊',
+		medio: '🤔',
+		dificil: '😰'
+	};
 
 	const canStart = $derived(() => {
 		const mode = MODES.find(m => m.value === config.mode);
@@ -34,7 +58,7 @@
 <div class="game-config space-y-6">
 	<!-- Game Mode -->
 	<div class="config-section">
-		<h3 class="text-lg font-semibold text-white mb-3">Modo de Juego</h3>
+		<h3 class="text-lg font-semibold text-white mb-3">{$t('config.gameMode')}</h3>
 		<div class="grid gap-3">
 			{#each MODES as mode}
 				<button
@@ -49,8 +73,8 @@
 				>
 					<div class="flex items-center justify-between">
 						<div>
-							<div class="font-semibold text-white">{mode.label}</div>
-							<div class="text-sm text-slate-400">{mode.description}</div>
+							<div class="font-semibold text-white">{mode.icon} {$t(mode.key)}</div>
+							<div class="text-sm text-slate-400">{$t(mode.descKey)}</div>
 						</div>
 						{#if config.mode === mode.value}
 							<div class="text-blue-400 text-xl">✓</div>
@@ -58,7 +82,7 @@
 					</div>
 					{#if playerCount < mode.minPlayers}
 						<div class="text-xs text-amber-400 mt-2">
-							Necesitas {mode.minPlayers} jugador{mode.minPlayers > 1 ? 'es' : ''} mínimo
+							{mode.minPlayers > 1 ? $t('config.needPlayersPlural', { values: { count: mode.minPlayers } }) : $t('config.needPlayers', { values: { count: mode.minPlayers } })}
 						</div>
 					{/if}
 				</button>
@@ -68,37 +92,37 @@
 
 	<!-- Category -->
 	<div class="config-section">
-		<h3 class="text-lg font-semibold text-white mb-3">Categoría</h3>
+		<h3 class="text-lg font-semibold text-white mb-3">{$t('config.category')}</h3>
 		<select
 			class="select"
 			value={config.category}
 			onchange={(e) => isHost && onConfigChange({ category: e.currentTarget.value as Category })}
 			disabled={!isHost}
 		>
-			{#each CATEGORIES as [value, label]}
-				<option {value}>{label}</option>
+			{#each categoryKeys as cat}
+				<option value={cat}>{categoryIcons[cat]} {$t(`categories.${cat}`)}</option>
 			{/each}
 		</select>
 	</div>
 
 	<!-- Difficulty -->
 	<div class="config-section">
-		<h3 class="text-lg font-semibold text-white mb-3">Dificultad</h3>
+		<h3 class="text-lg font-semibold text-white mb-3">{$t('config.difficulty')}</h3>
 		<select
 			class="select"
 			value={config.difficulty}
 			onchange={(e) => isHost && onConfigChange({ difficulty: e.currentTarget.value as Difficulty })}
 			disabled={!isHost}
 		>
-			{#each DIFFICULTIES as [value, label]}
-				<option {value}>{label}</option>
+			{#each difficultyKeys as diff}
+				<option value={diff}>{difficultyIcons[diff]} {$t(`difficulties.${diff}`)}</option>
 			{/each}
 		</select>
 	</div>
 
 	<!-- Max Attempts -->
 	<div class="config-section">
-		<h3 class="text-lg font-semibold text-white mb-3">Intentos Máximos</h3>
+		<h3 class="text-lg font-semibold text-white mb-3">{$t('config.maxAttempts')}</h3>
 		<div class="flex gap-3">
 			{#each [6, 8, 10] as attempts}
 				<button
@@ -119,7 +143,7 @@
 
 	<!-- Rounds -->
 	<div class="config-section">
-		<h3 class="text-lg font-semibold text-white mb-3">Rondas</h3>
+		<h3 class="text-lg font-semibold text-white mb-3">{$t('config.rounds')}</h3>
 		<div class="flex gap-3">
 			{#each [1, 3, 5] as rounds}
 				<button
@@ -140,7 +164,7 @@
 
 	<!-- Turn Time Limit -->
 	<div class="config-section">
-		<h3 class="text-lg font-semibold text-white mb-3">Tiempo por Turno</h3>
+		<h3 class="text-lg font-semibold text-white mb-3">{$t('config.turnTime')}</h3>
 		<div class="flex gap-3 flex-wrap">
 			{#each [null, 30, 45, 60] as time}
 				<button
@@ -153,7 +177,7 @@
 					onclick={() => isHost && onConfigChange({ turnTimeLimit: time })}
 					disabled={!isHost}
 				>
-					{time === null ? '∞' : `${time}s`}
+					{time === null ? $t('config.unlimited') : $t('config.seconds', { values: { time } })}
 				</button>
 			{/each}
 		</div>
@@ -168,14 +192,14 @@
 			disabled={!canStart()}
 		>
 			{#if canStart()}
-				🚀 Iniciar Partida
+				🚀 {$t('config.startGame')}
 			{:else}
-				Esperando más jugadores...
+				{$t('config.waitingPlayers')}
 			{/if}
 		</button>
 	{:else}
 		<div class="text-center text-slate-400 py-4">
-			Esperando a que el host inicie la partida...
+			{$t('config.waitingHostStart')}
 		</div>
 	{/if}
 </div>

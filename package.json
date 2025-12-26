@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "partykit": "^0.0.115",
-    "partysocket": "^1.0.3"
+    "partysocket": "^1.0.3",
+    "svelte-i18n": "^4.0.1"
   }
 }

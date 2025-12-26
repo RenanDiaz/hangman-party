@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { t } from 'svelte-i18n';
 	import { singlePlayerStore } from '$lib/stores/game.svelte';
-	import { getRandomWord, CATEGORY_NAMES, DIFFICULTY_NAMES } from '$lib/data/words';
+	import { getRandomWord } from '$lib/data/words';
 	import type { Category, Difficulty } from '$lib/types/game';
 	import HangmanFigure from '$lib/components/HangmanFigure.svelte';
 	import WordDisplay from '$lib/components/WordDisplay.svelte';
 	import Keyboard from '$lib/components/Keyboard.svelte';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 
 	// Game configuration
 	let category = $state<Category>('mix');
@@ -40,9 +42,33 @@
 			startNewGame();
 		}
 	});
+
+	const categoryKeys = ['animales', 'paises', 'peliculas', 'comida', 'deportes', 'profesiones', 'tecnologia', 'mix'];
+	const categoryIcons: Record<string, string> = {
+		animales: '🐾',
+		paises: '🌍',
+		peliculas: '🎬',
+		comida: '🍕',
+		deportes: '⚽',
+		profesiones: '👨‍⚕️',
+		tecnologia: '💻',
+		mix: '🎲'
+	};
+
+	const difficultyKeys = ['facil', 'medio', 'dificil'];
+	const difficultyIcons: Record<string, string> = {
+		facil: '😊',
+		medio: '🤔',
+		dificil: '😰'
+	};
 </script>
 
 <main class="flex-1 flex flex-col p-4">
+	<!-- Language Switcher -->
+	<div class="fixed top-4 right-4 z-50">
+		<LanguageSwitcher />
+	</div>
+
 	<!-- Header -->
 	<header class="flex items-center justify-between mb-6">
 		<button
@@ -50,26 +76,26 @@
 			class="btn btn-secondary text-sm"
 			onclick={handleBackToMenu}
 		>
-			← Menú
+			← {$t('game.menu')}
 		</button>
 
 		<div class="text-center">
-			<h1 class="text-2xl font-bold text-white">🎮 Un Jugador</h1>
+			<h1 class="text-2xl font-bold text-white">🎮 {$t('game.singlePlayerTitle')}</h1>
 			<p class="text-sm text-slate-400">
-				{CATEGORY_NAMES[store.category as Category] || CATEGORY_NAMES[category]}
+				{categoryIcons[store.category as Category] || categoryIcons[category]} {$t(`categories.${store.category || category}`)}
 			</p>
 		</div>
 
 		<div class="text-right">
 			<div class="text-lg font-bold text-white">{store.score}</div>
-			<div class="text-xs text-slate-400">puntos</div>
+			<div class="text-xs text-slate-400">{$t('game.points')}</div>
 		</div>
 	</header>
 
 	{#if store.gameStatus === 'idle'}
 		<!-- Loading / Starting -->
 		<div class="flex-1 flex items-center justify-center">
-			<div class="text-slate-400">Cargando...</div>
+			<div class="text-slate-400">{$t('game.loading')}</div>
 		</div>
 	{:else}
 		<!-- Game Area -->
@@ -97,16 +123,16 @@
 			{#if store.gameStatus === 'won'}
 				<div class="text-center mb-8 animate-bounce-in">
 					<div class="text-4xl mb-2">🎉</div>
-					<h2 class="text-2xl font-bold text-green-400">¡Ganaste!</h2>
+					<h2 class="text-2xl font-bold text-green-400">{$t('game.youWon')}</h2>
 					<p class="text-slate-400">
-						Rondas ganadas: {store.roundsWon} / {store.roundsPlayed}
+						{$t('game.roundsWon', { values: { won: store.roundsWon, played: store.roundsPlayed } })}
 					</p>
 				</div>
 			{:else if store.gameStatus === 'lost'}
 				<div class="text-center mb-8 animate-shake">
 					<div class="text-4xl mb-2">😵</div>
-					<h2 class="text-2xl font-bold text-red-400">¡Perdiste!</h2>
-					<p class="text-slate-400">La palabra era: <span class="text-white font-bold">{store.word}</span></p>
+					<h2 class="text-2xl font-bold text-red-400">{$t('game.youLost')}</h2>
+					<p class="text-slate-400">{$t('game.wordWas')} <span class="text-white font-bold">{store.word}</span></p>
 				</div>
 			{/if}
 
@@ -124,14 +150,14 @@
 						class="btn btn-primary"
 						onclick={handlePlayAgain}
 					>
-						🔄 Jugar de nuevo
+						🔄 {$t('game.playAgain')}
 					</button>
 					<button
 						type="button"
 						class="btn btn-secondary"
 						onclick={handleBackToMenu}
 					>
-						🏠 Menú principal
+						🏠 {$t('game.mainMenu')}
 					</button>
 				</div>
 			{/if}
@@ -140,13 +166,13 @@
 		<!-- Stats Bar -->
 		<div class="mt-6 flex justify-center gap-6 text-sm text-slate-400">
 			<div>
-				Victorias: <span class="text-white font-bold">{store.roundsWon}</span>
+				{$t('game.victories')} <span class="text-white font-bold">{store.roundsWon}</span>
 			</div>
 			<div>
-				Partidas: <span class="text-white font-bold">{store.roundsPlayed}</span>
+				{$t('game.games')} <span class="text-white font-bold">{store.roundsPlayed}</span>
 			</div>
 			<div>
-				Puntos: <span class="text-white font-bold">{store.score}</span>
+				{$t('game.points')} <span class="text-white font-bold">{store.score}</span>
 			</div>
 		</div>
 	{/if}
@@ -156,30 +182,30 @@
 <div class="fixed bottom-4 right-4">
 	<details class="card p-4 bg-slate-800/90 backdrop-blur max-w-xs">
 		<summary class="cursor-pointer text-white font-semibold flex items-center gap-2">
-			⚙️ Configuración
+			⚙️ {$t('game.settings')}
 		</summary>
 
 		<div class="mt-4 space-y-4">
 			<div>
-				<label class="block text-sm text-slate-400 mb-1">Categoría</label>
+				<label class="block text-sm text-slate-400 mb-1">{$t('game.category')}</label>
 				<select class="select text-sm" bind:value={category}>
-					{#each Object.entries(CATEGORY_NAMES) as [value, label]}
-						<option {value}>{label}</option>
+					{#each categoryKeys as cat}
+						<option value={cat}>{categoryIcons[cat]} {$t(`categories.${cat}`)}</option>
 					{/each}
 				</select>
 			</div>
 
 			<div>
-				<label class="block text-sm text-slate-400 mb-1">Dificultad</label>
+				<label class="block text-sm text-slate-400 mb-1">{$t('game.difficulty')}</label>
 				<select class="select text-sm" bind:value={difficulty}>
-					{#each Object.entries(DIFFICULTY_NAMES) as [value, label]}
-						<option {value}>{label}</option>
+					{#each difficultyKeys as diff}
+						<option value={diff}>{difficultyIcons[diff]} {$t(`difficulties.${diff}`)}</option>
 					{/each}
 				</select>
 			</div>
 
 			<div>
-				<label class="block text-sm text-slate-400 mb-1">Intentos</label>
+				<label class="block text-sm text-slate-400 mb-1">{$t('game.attempts')}</label>
 				<div class="flex gap-2">
 					{#each [6, 8, 10] as attempts}
 						<button
@@ -199,7 +225,7 @@
 				class="btn btn-primary w-full text-sm"
 				onclick={handlePlayAgain}
 			>
-				Aplicar y reiniciar
+				{$t('game.applyRestart')}
 			</button>
 		</div>
 	</details>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from 'svelte-i18n';
 	import type { CompetitivePlayerState, Player } from '$lib/types/game';
 	import HangmanFigure from './HangmanFigure.svelte';
 	import WordDisplay from './WordDisplay.svelte';
@@ -38,14 +39,14 @@
 				<span class="font-semibold text-white {isCurrentPlayer ? 'text-blue-400' : ''}">
 					{player?.name}
 					{#if isCurrentPlayer}
-						<span class="text-xs">(tú)</span>
+						<span class="text-xs">{$t('players.you')}</span>
 					{/if}
 				</span>
 
 				{#if state.hasWon}
-					<span class="ml-auto text-green-400">🏆 ¡Ganó!</span>
+					<span class="ml-auto text-green-400">🏆 {$t('competitive.won')}</span>
 				{:else if state.hasLost}
-					<span class="ml-auto text-red-400">❌ Perdió</span>
+					<span class="ml-auto text-red-400">❌ {$t('competitive.lost')}</span>
 				{/if}
 			</div>
 
@@ -71,7 +72,7 @@
 				</div>
 			{:else}
 				<div class="text-center text-slate-500 py-4">
-					<div class="text-sm">Palabra oculta</div>
+					<div class="text-sm">{$t('competitive.hiddenWord')}</div>
 					<div class="text-lg tracking-widest">
 						{'?'.repeat(Math.min(state.word.replace(/\s/g, '').length, 8))}
 						{#if state.word.replace(/\s/g, '').length > 8}...{/if}
@@ -81,7 +82,7 @@
 
 			<!-- Progress -->
 			<div class="mt-4 text-center text-sm text-slate-400">
-				{state.revealedLetters.length} letras | {state.wrongLetters.length}/{maxAttempts} errores
+				{state.revealedLetters.length} {$t('competitive.letters')} | {state.wrongLetters.length}/{maxAttempts} {$t('competitive.errors')}
 			</div>
 		</div>
 	{/each}

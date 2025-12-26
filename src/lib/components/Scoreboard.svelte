@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from 'svelte-i18n';
 	import type { Player } from '$lib/types/game';
 
 	interface Props {
@@ -24,7 +25,7 @@
 </script>
 
 <div class="scoreboard">
-	<h3 class="text-xl font-bold text-white mb-4 text-center">🏆 Tabla de Posiciones</h3>
+	<h3 class="text-xl font-bold text-white mb-4 text-center">🏆 {$t('scoreboard.title')}</h3>
 
 	<div class="space-y-2">
 		{#each sortedPlayers as player, index (player.id)}
@@ -45,14 +46,14 @@
 					<span class="font-semibold truncate {player.id === currentPlayerId ? 'text-blue-400' : 'text-white'}">
 						{player.name}
 						{#if player.id === currentPlayerId}
-							<span class="text-xs text-blue-400">(tú)</span>
+							<span class="text-xs text-blue-400">{$t('players.you')}</span>
 						{/if}
 					</span>
 				</div>
 
 				<div class="score text-right">
 					<div class="text-xl font-bold text-white">{player.score}</div>
-					<div class="text-xs text-slate-400">pts</div>
+					<div class="text-xs text-slate-400">{$t('game.pts')}</div>
 				</div>
 			</div>
 		{/each}
