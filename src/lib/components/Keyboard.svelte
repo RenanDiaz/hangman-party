@@ -53,9 +53,9 @@
 	});
 </script>
 
-<div class="keyboard flex flex-col items-center gap-2 md:gap-3">
+<div class="keyboard">
 	{#each KEYBOARD_ROWS as row, rowIndex}
-		<div class="flex gap-1 md:gap-2">
+		<div class="keyboard-row">
 			{#each row as letter}
 				{@const state = getLetterState(letter)}
 				<button
@@ -76,23 +76,72 @@
 </div>
 
 <style>
+	.keyboard {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.375rem;
+		width: 100%;
+		max-width: 100%;
+		padding: 0 0.25rem;
+		box-sizing: border-box;
+	}
+
+	.keyboard-row {
+		display: flex;
+		gap: 0.25rem;
+		justify-content: center;
+		width: 100%;
+		max-width: 100%;
+	}
+
 	.keyboard-key {
-		width: 2.5rem;
-		height: 3rem;
-		border-radius: 0.5rem;
+		flex: 0 1 auto;
+		min-width: 1.75rem;
+		width: calc((100vw - 3rem) / 10);
+		max-width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 0.375rem;
 		font-weight: bold;
-		font-size: 1rem;
-		transition: all 0.2s;
+		font-size: 0.875rem;
+		transition: all 0.15s;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
-	@media (min-width: 768px) {
+	@media (min-width: 400px) {
+		.keyboard {
+			gap: 0.5rem;
+		}
+
+		.keyboard-row {
+			gap: 0.375rem;
+		}
+
 		.keyboard-key {
-			width: 3rem;
+			min-width: 2rem;
+			max-width: 2.75rem;
+			height: 2.75rem;
+			font-size: 1rem;
+		}
+	}
+
+	@media (min-width: 768px) {
+		.keyboard {
+			gap: 0.75rem;
+		}
+
+		.keyboard-row {
+			gap: 0.5rem;
+		}
+
+		.keyboard-key {
+			min-width: 2.5rem;
+			max-width: 3rem;
 			height: 3.5rem;
 			font-size: 1.25rem;
+			border-radius: 0.5rem;
 		}
 	}
 
@@ -104,7 +153,7 @@
 
 	.keyboard-key-available:hover {
 		background: rgb(100 116 139);
-		transform: scale(1.1);
+		transform: scale(1.05);
 	}
 
 	.keyboard-key-available:active {
