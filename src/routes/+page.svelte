@@ -36,7 +36,7 @@
 
 <main class="flex-1 flex flex-col items-center justify-center p-4">
 	<!-- Language Switcher -->
-	<div class="fixed top-4 right-4 z-50">
+	<div class="fixed safe-top right-4 z-50">
 		<LanguageSwitcher />
 	</div>
 

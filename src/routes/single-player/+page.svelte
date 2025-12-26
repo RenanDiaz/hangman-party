@@ -65,7 +65,7 @@
 
 <main class="flex-1 flex flex-col p-4">
 	<!-- Language Switcher -->
-	<div class="fixed top-4 right-4 z-50">
+	<div class="fixed safe-top right-4 z-50">
 		<LanguageSwitcher />
 	</div>
 
@@ -235,8 +235,8 @@
 <style>
 	.settings-panel {
 		position: fixed;
-		bottom: 0.5rem;
-		left: 0.5rem;
+		bottom: calc(0.5rem + env(safe-area-inset-bottom));
+		left: calc(0.5rem + env(safe-area-inset-left));
 		z-index: 40;
 	}
 
@@ -288,9 +288,9 @@
 
 	@media (min-width: 640px) {
 		.settings-panel {
-			bottom: 1rem;
+			bottom: calc(1rem + env(safe-area-inset-bottom));
 			left: auto;
-			right: 1rem;
+			right: calc(1rem + env(safe-area-inset-right));
 		}
 
 		.settings-label {
