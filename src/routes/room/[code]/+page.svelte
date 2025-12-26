@@ -2,9 +2,9 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { t } from 'svelte-i18n';
 	import { gameStore } from '$lib/stores/game.svelte';
 	import { AVATARS } from '$lib/types/game';
-	import { CATEGORY_NAMES } from '$lib/data/words';
 	import HangmanFigure from '$lib/components/HangmanFigure.svelte';
 	import WordDisplay from '$lib/components/WordDisplay.svelte';
 	import Keyboard from '$lib/components/Keyboard.svelte';
@@ -12,6 +12,7 @@
 	import GameConfig from '$lib/components/GameConfig.svelte';
 	import Scoreboard from '$lib/components/Scoreboard.svelte';
 	import TurnTimer from '$lib/components/TurnTimer.svelte';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 
 	const store = gameStore;
 
@@ -42,9 +43,9 @@
 		const url = window.location.href;
 		try {
 			await navigator.clipboard.writeText(url);
-			alert('¡Link copiado al portapapeles!');
+			alert($t('room.linkCopied'));
 		} catch {
-			prompt('Copia este link:', url);
+			prompt('Copy this link:', url);
 		}
 	};
 
@@ -56,30 +57,46 @@
 			}
 		};
 	});
+
+	const categoryIcons: Record<string, string> = {
+		animales: '🐾',
+		paises: '🌍',
+		peliculas: '🎬',
+		comida: '🍕',
+		deportes: '⚽',
+		profesiones: '👨‍⚕️',
+		tecnologia: '💻',
+		mix: '🎲'
+	};
 </script>
 
 <main class="flex-1 flex flex-col p-4">
+	<!-- Language Switcher -->
+	<div class="fixed top-4 right-4 z-50">
+		<LanguageSwitcher />
+	</div>
+
 	{#if !hasJoined}
 		<!-- Join Form -->
 		<div class="flex-1 flex items-center justify-center">
 			<div class="card max-w-md w-full">
 				<h1 class="text-2xl font-bold text-white text-center mb-6">
-					Unirse a la Sala
+					{$t('room.joinRoom')}
 				</h1>
 
 				<div class="text-center mb-6">
-					<span class="text-sm text-slate-400">Código de sala:</span>
+					<span class="text-sm text-slate-400">{$t('room.roomCode')}</span>
 					<div class="text-3xl font-mono font-bold text-blue-400">{roomCode}</div>
 				</div>
 
 				<div class="space-y-4">
 					<div>
-						<label for="playerName" class="block text-sm text-slate-400 mb-1">Tu nombre</label>
+						<label for="playerName" class="block text-sm text-slate-400 mb-1">{$t('room.yourName')}</label>
 						<input
 							id="playerName"
 							type="text"
 							class="input"
-							placeholder="Ingresa tu nombre"
+							placeholder={$t('room.enterName')}
 							bind:value={playerName}
 							maxlength="20"
 							onkeydown={(e) => e.key === 'Enter' && handleJoin()}
@@ -87,7 +104,7 @@
 					</div>
 
 					<div>
-						<label class="block text-sm text-slate-400 mb-2">Elige tu avatar</label>
+						<label class="block text-sm text-slate-400 mb-2">{$t('room.chooseAvatar')}</label>
 						<div class="grid grid-cols-8 gap-2">
 							{#each AVATARS as avatar}
 								<button
@@ -110,7 +127,7 @@
 						onclick={handleJoin}
 						disabled={playerName.trim().length < 2}
 					>
-						🎮 Unirse
+						🎮 {$t('room.joinButton')}
 					</button>
 
 					<button
@@ -118,7 +135,7 @@
 						class="text-sm text-slate-400 w-full text-center hover:text-white transition-colors"
 						onclick={() => goto('/')}
 					>
-						← Volver al menú
+						← {$t('room.backToMenu')}
 					</button>
 				</div>
 			</div>
@@ -128,7 +145,7 @@
 		<div class="flex-1 flex items-center justify-center">
 			<div class="text-center">
 				<div class="text-4xl animate-bounce mb-4">🔌</div>
-				<p class="text-slate-400">Conectando...</p>
+				<p class="text-slate-400">{$t('room.connecting')}</p>
 			</div>
 		</div>
 	{:else if store.error && !store.isConnected}
@@ -136,14 +153,14 @@
 		<div class="flex-1 flex items-center justify-center">
 			<div class="card max-w-md text-center">
 				<div class="text-4xl mb-4">❌</div>
-				<h2 class="text-xl font-bold text-red-400 mb-2">Error de conexión</h2>
+				<h2 class="text-xl font-bold text-red-400 mb-2">{$t('room.connectionError')}</h2>
 				<p class="text-slate-400 mb-4">{store.error}</p>
 				<button
 					type="button"
 					class="btn btn-primary"
 					onclick={() => { hasJoined = false; }}
 				>
-					Reintentar
+					{$t('room.retry')}
 				</button>
 			</div>
 		</div>
@@ -155,18 +172,18 @@
 				class="btn btn-secondary text-sm"
 				onclick={handleLeave}
 			>
-				← Salir
+				← {$t('room.exit')}
 			</button>
 
 			<div class="text-center">
 				<div class="flex items-center gap-2 justify-center">
-					<span class="text-sm text-slate-400">Sala:</span>
+					<span class="text-sm text-slate-400">{$t('room.room')}</span>
 					<span class="font-mono font-bold text-blue-400">{roomCode}</span>
 					<button
 						type="button"
 						class="text-slate-400 hover:text-white transition-colors"
 						onclick={copyRoomLink}
-						title="Copiar link"
+						title={$t('room.copyLink')}
 					>
 						📋
 					</button>
@@ -176,7 +193,7 @@
 			<div class="text-right text-sm">
 				<div class="text-white">{store.currentPlayer?.name}</div>
 				<div class="text-slate-400">
-					{store.state.config.mode === 'team' ? '👥 Equipo' : '🏆 Competitivo'}
+					{store.state.config.mode === 'team' ? `👥 ${$t('room.team')}` : `🏆 ${$t('room.competitive')}`}
 				</div>
 			</div>
 		</header>
@@ -196,7 +213,7 @@
 				<!-- Left: Players -->
 				<div class="card">
 					<h2 class="text-xl font-bold text-white mb-4">
-						👥 Jugadores ({store.players.length})
+						{$t('room.playersCount', { values: { count: store.players.length } })}
 					</h2>
 					<PlayerList
 						players={store.players}
@@ -211,14 +228,14 @@
 							class="btn btn-secondary w-full text-sm"
 							onclick={copyRoomLink}
 						>
-							📋 Copiar link para invitar
+							📋 {$t('room.copyInviteLink')}
 						</button>
 					</div>
 				</div>
 
 				<!-- Right: Configuration -->
 				<div class="card">
-					<h2 class="text-xl font-bold text-white mb-4">⚙️ Configuración</h2>
+					<h2 class="text-xl font-bold text-white mb-4">⚙️ {$t('game.settings')}</h2>
 					<GameConfig
 						config={store.state.config}
 						isHost={store.isHost}
@@ -236,11 +253,11 @@
 					<!-- Round info -->
 					<div class="text-center mb-4">
 						<span class="text-sm text-slate-400">
-							Ronda {store.state.currentRound} de {store.state.config.rounds}
+							{$t('room.roundOf', { values: { current: store.state.currentRound, total: store.state.config.rounds } })}
 						</span>
 						{#if store.round?.category}
 							<span class="text-sm text-slate-400 ml-2">
-								| {CATEGORY_NAMES[store.round.category as keyof typeof CATEGORY_NAMES]}
+								| {categoryIcons[store.round.category]} {$t(`categories.${store.round.category}`)}
 							</span>
 						{/if}
 					</div>
@@ -260,11 +277,11 @@
 						<div class="text-center mb-4">
 							{#if store.isMyTurn}
 								<span class="text-lg font-bold text-green-400 animate-pulse">
-									🎯 ¡Es tu turno!
+									🎯 {$t('room.yourTurn')}
 								</span>
 							{:else}
 								<span class="text-slate-400">
-									Turno de: <span class="text-white font-semibold">{store.currentTurnPlayer?.name}</span>
+									{$t('room.turnOf')} <span class="text-white font-semibold">{store.currentTurnPlayer?.name}</span>
 								</span>
 							{/if}
 						</div>
@@ -296,14 +313,14 @@
 
 					{#if !store.isMyTurn && store.state.config.mode === 'team'}
 						<p class="text-slate-400 mt-4 text-sm">
-							Espera tu turno para adivinar...
+							{$t('room.waitYourTurn')}
 						</p>
 					{/if}
 				</div>
 
 				<!-- Sidebar: Players -->
 				<div class="lg:w-72 card h-fit">
-					<h3 class="font-bold text-white mb-3">Jugadores</h3>
+					<h3 class="font-bold text-white mb-3">{$t('room.players')}</h3>
 					<PlayerList
 						players={store.players}
 						currentPlayerId={store.playerId}
@@ -317,7 +334,7 @@
 			<div class="flex-1 flex items-center justify-center">
 				<div class="card max-w-lg w-full text-center">
 					<h2 class="text-2xl font-bold text-white mb-4">
-						🎉 ¡Ronda {store.state.currentRound} terminada!
+						🎉 {$t('room.roundFinished', { values: { round: store.state.currentRound } })}
 					</h2>
 
 					<div class="mb-6">
@@ -328,7 +345,7 @@
 					</div>
 
 					<p class="text-slate-400 mb-4">
-						Siguiente ronda: {store.state.currentRound + 1} de {store.state.config.rounds}
+						{$t('room.nextRound', { values: { current: store.state.currentRound + 1, total: store.state.config.rounds } })}
 					</p>
 
 					{#if store.isHost}
@@ -337,11 +354,11 @@
 							class="btn btn-primary"
 							onclick={() => store.nextRound()}
 						>
-							▶️ Siguiente Ronda
+							▶️ {$t('room.nextRoundButton')}
 						</button>
 					{:else}
 						<p class="text-slate-400">
-							Esperando al host para continuar...
+							{$t('room.waitingForHost')}
 						</p>
 					{/if}
 				</div>
@@ -351,7 +368,7 @@
 			<div class="flex-1 flex items-center justify-center">
 				<div class="card max-w-lg w-full text-center">
 					<div class="text-6xl mb-4">🏆</div>
-					<h2 class="text-3xl font-bold text-white mb-2">¡Juego Terminado!</h2>
+					<h2 class="text-3xl font-bold text-white mb-2">{$t('room.gameFinished')}</h2>
 
 					<div class="mb-6">
 						<Scoreboard
@@ -367,26 +384,26 @@
 								class="btn btn-primary"
 								onclick={() => store.restartGame()}
 							>
-								🔄 Jugar de nuevo
+								🔄 {$t('game.playAgain')}
 							</button>
 							<button
 								type="button"
 								class="btn btn-secondary"
 								onclick={handleLeave}
 							>
-								🏠 Salir
+								🏠 {$t('room.exit')}
 							</button>
 						</div>
 					{:else}
 						<p class="text-slate-400 mb-4">
-							Esperando al host...
+							{$t('room.waitingHost')}
 						</p>
 						<button
 							type="button"
 							class="btn btn-secondary"
 							onclick={handleLeave}
 						>
-							🏠 Salir
+							🏠 {$t('room.exit')}
 						</button>
 					{/if}
 				</div>
@@ -395,7 +412,7 @@
 	{:else}
 		<!-- No state yet -->
 		<div class="flex-1 flex items-center justify-center">
-			<div class="text-slate-400">Cargando sala...</div>
+			<div class="text-slate-400">{$t('room.loadingRoom')}</div>
 		</div>
 	{/if}
 </main>

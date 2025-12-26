@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { t } from 'svelte-i18n';
 
 	interface Props {
 		startTime: number;
@@ -53,7 +53,7 @@
 
 	{#if isCritical}
 		<div class="text-center text-red-400 text-sm mt-1 animate-pulse">
-			¡Tiempo casi agotado!
+			{$t('timer.timeAlmostUp')}
 		</div>
 	{/if}
 </div>

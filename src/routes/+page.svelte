@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { t, locale } from 'svelte-i18n';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 
 	let roomCode = $state('');
 	let showJoinInput = $state(false);
@@ -27,15 +29,23 @@
 	const handleSinglePlayer = () => {
 		goto('/single-player');
 	};
+
+	const categoryIcons = ['🐾', '🌍', '🎬', '🍕', '⚽', '👨‍⚕️', '💻', '🎲'];
+	const categoryKeys = ['animales', 'paises', 'peliculas', 'comida', 'deportes', 'profesiones', 'tecnologia', 'mix'];
 </script>
 
 <main class="flex-1 flex flex-col items-center justify-center p-4">
+	<!-- Language Switcher -->
+	<div class="fixed top-4 right-4 z-50">
+		<LanguageSwitcher />
+	</div>
+
 	<div class="text-center mb-12">
 		<h1 class="text-5xl md:text-7xl font-bold text-gradient glow mb-4">
-			🎮 Hangman Party
+			🎮 {$t('home.title')}
 		</h1>
 		<p class="text-xl text-slate-300">
-			Juego de Ahorcado Multijugador en Tiempo Real
+			{$t('home.subtitle')}
 		</p>
 	</div>
 
@@ -47,7 +57,7 @@
 			onclick={handleSinglePlayer}
 		>
 			<span class="text-2xl">🎯</span>
-			<span>Un Jugador</span>
+			<span>{$t('home.singlePlayer')}</span>
 		</button>
 
 		<!-- Create Room -->
@@ -57,7 +67,7 @@
 			onclick={handleCreateRoom}
 		>
 			<span class="text-2xl">✨</span>
-			<span>Crear Sala</span>
+			<span>{$t('home.createRoom')}</span>
 		</button>
 
 		<!-- Join Room -->
@@ -68,7 +78,7 @@
 				onclick={() => showJoinInput = true}
 			>
 				<span class="text-2xl">🔗</span>
-				<span>Unirse a Sala</span>
+				<span>{$t('home.joinRoom')}</span>
 			</button>
 		{:else}
 			<div class="card">
@@ -76,7 +86,7 @@
 					<input
 						type="text"
 						class="input flex-1 uppercase"
-						placeholder="Código de sala"
+						placeholder={$t('home.roomCodePlaceholder')}
 						bind:value={roomCode}
 						maxlength="8"
 						onkeydown={(e) => e.key === 'Enter' && handleJoinRoom()}
@@ -87,7 +97,7 @@
 						onclick={handleJoinRoom}
 						disabled={roomCode.trim().length < 4}
 					>
-						Unirse
+						{$t('home.join')}
 					</button>
 				</div>
 				<button
@@ -95,7 +105,7 @@
 					class="text-sm text-slate-400 mt-3 hover:text-white transition-colors"
 					onclick={() => showJoinInput = false}
 				>
-					Cancelar
+					{$t('home.cancel')}
 				</button>
 			</div>
 		{/if}
@@ -105,30 +115,30 @@
 	<div class="mt-16 grid md:grid-cols-3 gap-6 max-w-4xl w-full px-4">
 		<div class="card text-center">
 			<div class="text-4xl mb-3">👥</div>
-			<h3 class="font-bold text-lg text-white mb-2">Modo Equipo</h3>
-			<p class="text-slate-400 text-sm">Colabora con tus amigos para adivinar la palabra</p>
+			<h3 class="font-bold text-lg text-white mb-2">{$t('home.teamMode')}</h3>
+			<p class="text-slate-400 text-sm">{$t('home.teamModeDesc')}</p>
 		</div>
 
 		<div class="card text-center">
 			<div class="text-4xl mb-3">🏆</div>
-			<h3 class="font-bold text-lg text-white mb-2">Modo Competitivo</h3>
-			<p class="text-slate-400 text-sm">Cada jugador adivina su propia palabra. ¡Gana el más rápido!</p>
+			<h3 class="font-bold text-lg text-white mb-2">{$t('home.competitiveMode')}</h3>
+			<p class="text-slate-400 text-sm">{$t('home.competitiveModeDesc')}</p>
 		</div>
 
 		<div class="card text-center">
 			<div class="text-4xl mb-3">📊</div>
-			<h3 class="font-bold text-lg text-white mb-2">Puntuación</h3>
-			<p class="text-slate-400 text-sm">Sistema de puntos con bonus por velocidad y precisión</p>
+			<h3 class="font-bold text-lg text-white mb-2">{$t('home.scoring')}</h3>
+			<p class="text-slate-400 text-sm">{$t('home.scoringDesc')}</p>
 		</div>
 	</div>
 
 	<!-- Categories Preview -->
 	<div class="mt-12 text-center">
-		<p class="text-slate-400 mb-4">8 categorías disponibles</p>
+		<p class="text-slate-400 mb-4">{$t('home.categoriesAvailable', { values: { count: 8 } })}</p>
 		<div class="flex flex-wrap justify-center gap-3">
-			{#each ['🐾 Animales', '🌍 Países', '🎬 Películas', '🍕 Comida', '⚽ Deportes', '👨‍⚕️ Profesiones', '💻 Tecnología', '🎲 Mix'] as category}
+			{#each categoryKeys as category, i}
 				<span class="px-3 py-1 bg-slate-700/50 rounded-full text-sm text-slate-300">
-					{category}
+					{categoryIcons[i]} {$t(`categories.${category}`)}
 				</span>
 			{/each}
 		</div>
@@ -136,5 +146,5 @@
 </main>
 
 <footer class="p-4 text-center text-slate-500 text-sm">
-	<p>Hecho con ❤️ usando Svelte + PartyKit</p>
+	<p>{$t('home.madeWith')}</p>
 </footer>

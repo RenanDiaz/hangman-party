@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from 'svelte-i18n';
 	import type { Player } from '$lib/types/game';
 
 	interface Props {
@@ -41,25 +42,25 @@
 					<span class="font-semibold truncate {player.id === currentPlayerId ? 'text-blue-400' : 'text-white'}">
 						{player.name}
 						{#if player.id === currentPlayerId}
-							<span class="text-xs text-blue-400">(tú)</span>
+							<span class="text-xs text-blue-400">{$t('players.you')}</span>
 						{/if}
 					</span>
 
 					{#if player.isHost}
 						<span class="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">
-							👑 Host
+							👑 {$t('players.host')}
 						</span>
 					{/if}
 
 					{#if player.id === currentTurnPlayerId}
 						<span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full animate-pulse">
-							🎯 Turno
+							🎯 {$t('players.turn')}
 						</span>
 					{/if}
 				</div>
 
 				{#if !player.isConnected}
-					<span class="text-xs text-slate-400">Desconectado</span>
+					<span class="text-xs text-slate-400">{$t('players.disconnected')}</span>
 				{/if}
 			</div>
 
@@ -67,7 +68,7 @@
 			{#if showScores}
 				<div class="score text-right">
 					<div class="text-lg font-bold text-white">{player.score}</div>
-					<div class="text-xs text-slate-400">puntos</div>
+					<div class="text-xs text-slate-400">{$t('game.points')}</div>
 				</div>
 			{/if}
 
@@ -77,7 +78,7 @@
 					type="button"
 					class="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
 					onclick={() => onKick(player.id)}
-					title="Expulsar jugador"
+					title={$t('players.kickPlayer')}
 				>
 					✕
 				</button>
@@ -87,7 +88,7 @@
 
 	{#if players.length === 0}
 		<div class="text-center text-slate-400 py-4">
-			No hay jugadores todavía
+			{$t('players.noPlayers')}
 		</div>
 	{/if}
 </div>

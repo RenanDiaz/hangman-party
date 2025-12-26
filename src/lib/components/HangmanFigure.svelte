@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t } from 'svelte-i18n';
+
 	interface Props {
 		wrongGuesses: number;
 		maxAttempts: number;
@@ -239,7 +241,7 @@
 	<!-- Attempts counter -->
 	<div class="text-center mt-2">
 		<span class="text-sm text-slate-400">
-			Intentos: <span class="font-bold {wrongGuesses >= maxAttempts ? 'text-red-500' : 'text-white'}">{wrongGuesses}</span> / {maxAttempts}
+			{$t('game.attemptsLabel')} <span class="font-bold {wrongGuesses >= maxAttempts ? 'text-red-500' : 'text-white'}">{wrongGuesses}</span> / {maxAttempts}
 		</span>
 	</div>
 </div>
