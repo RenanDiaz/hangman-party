@@ -499,13 +499,16 @@ export default class HangmanParty implements Party.Server {
 			// Team mode (and single player) - shared word
 			const wordData = getRandomWord(this.state.config.category, this.state.config.difficulty);
 
+			// Rotate starting player based on round number
+			const startingPlayerIndex = (this.state.currentRound - 1) % this.state.players.length;
+
 			this.state.round = {
 				roundNumber: this.state.currentRound,
 				word: wordData.word,
 				category: wordData.category,
 				revealedLetters: [],
 				wrongLetters: [],
-				currentPlayerIndex: 0,
+				currentPlayerIndex: startingPlayerIndex,
 				startTime: Date.now(),
 				turnStartTime: this.state.config.turnTimeLimit ? Date.now() : null
 			};
