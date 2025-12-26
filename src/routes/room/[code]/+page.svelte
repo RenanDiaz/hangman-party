@@ -72,7 +72,7 @@
 
 <main class="flex-1 flex flex-col p-4">
 	<!-- Language Switcher -->
-	<div class="fixed top-4 right-4 z-50">
+	<div class="fixed safe-top right-4 z-50">
 		<LanguageSwitcher />
 	</div>
 
@@ -200,7 +200,7 @@
 
 		<!-- Error Toast -->
 		{#if store.error}
-			<div class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+			<div class="fixed safe-top left-1/2 transform -translate-x-1/2 z-50">
 				<div class="bg-red-500/90 text-white px-4 py-2 rounded-lg shadow-lg animate-bounce-in">
 					{store.error}
 				</div>
