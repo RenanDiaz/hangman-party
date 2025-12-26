@@ -43,9 +43,11 @@
 	</div>
 
 	<div class="text-center mb-12">
-		<h1 class="text-5xl md:text-7xl font-bold text-gradient glow mb-4">
-			🎮 {$t('home.title')}
-		</h1>
+		<img
+			src="/logo.png"
+			alt="Hangman Party"
+			class="w-64 md:w-80 lg:w-96 mx-auto mb-6 drop-shadow-2xl"
+		/>
 		<p class="text-xl text-slate-300">
 			{$t('home.subtitle')}
 		</p>
