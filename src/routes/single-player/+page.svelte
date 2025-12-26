@@ -8,6 +8,7 @@
 	import WordDisplay from '$lib/components/WordDisplay.svelte';
 	import Keyboard from '$lib/components/Keyboard.svelte';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import SoundToggle from '$lib/components/SoundToggle.svelte';
 
 	// Game configuration
 	let category = $state<Category>('mix');
@@ -64,8 +65,9 @@
 </script>
 
 <main class="flex-1 flex flex-col p-4">
-	<!-- Language Switcher -->
-	<div class="fixed safe-top right-4 z-50">
+	<!-- Language Switcher & Sound Toggle -->
+	<div class="fixed safe-top right-4 z-50 flex gap-2">
+		<SoundToggle />
 		<LanguageSwitcher />
 	</div>
 
