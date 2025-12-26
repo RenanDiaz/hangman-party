@@ -49,6 +49,27 @@
 		}
 	};
 
+	const shareRoom = async () => {
+		const url = window.location.href;
+		const shareData = {
+			title: $t('room.shareTitle'),
+			text: $t('room.shareText', { values: { code: roomCode } }),
+			url: url
+		};
+
+		try {
+			if (navigator.share && navigator.canShare(shareData)) {
+				await navigator.share(shareData);
+			} else {
+				await copyRoomLink();
+			}
+		} catch (err) {
+			if ((err as Error).name !== 'AbortError') {
+				await copyRoomLink();
+			}
+		}
+	};
+
 	// Cleanup on unmount
 	onMount(() => {
 		return () => {
@@ -225,10 +246,10 @@
 					<div class="mt-4 pt-4 border-t border-slate-700">
 						<button
 							type="button"
-							class="btn btn-secondary w-full text-sm"
-							onclick={copyRoomLink}
+							class="btn btn-primary w-full text-sm"
+							onclick={shareRoom}
 						>
-							📋 {$t('room.copyInviteLink')}
+							📤 {$t('room.shareInvite')}
 						</button>
 					</div>
 				</div>
