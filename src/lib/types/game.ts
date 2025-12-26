@@ -95,7 +95,7 @@ export interface GameState {
 
 // Message types for PartyKit
 export type ClientMessage =
-	| { type: 'join'; payload: { name: string; avatar: string } }
+	| { type: 'join'; payload: { name: string; avatar: string; sessionId: string } }
 	| { type: 'leave' }
 	| { type: 'update_config'; payload: Partial<GameConfig> }
 	| { type: 'start_game' }

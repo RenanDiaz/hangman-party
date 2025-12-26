@@ -12,11 +12,33 @@ import type {
 // PartyKit host - update this after deployment
 const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST || 'localhost:1999';
 
+// Session ID key for localStorage
+const SESSION_ID_KEY = 'hangman_party_session_id';
+
+// Generate a unique session ID
+function generateSessionId(): string {
+	return `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
+
+// Get or create a persistent session ID
+function getOrCreateSessionId(): string {
+	if (typeof localStorage === 'undefined') {
+		return generateSessionId();
+	}
+	let sessionId = localStorage.getItem(SESSION_ID_KEY);
+	if (!sessionId) {
+		sessionId = generateSessionId();
+		localStorage.setItem(SESSION_ID_KEY, sessionId);
+	}
+	return sessionId;
+}
+
 class GameStore {
 	// State
 	state = $state<GameState | null>(null);
 	socket = $state<PartySocket | null>(null);
 	playerId = $state<string>('');
+	sessionId = $state<string>('');
 	isConnected = $state(false);
 	isConnecting = $state(false);
 	error = $state<string | null>(null);
@@ -120,16 +142,20 @@ class GameStore {
 		this.isConnecting = true;
 		this.error = null;
 
+		// Get or create a persistent session ID
+		this.sessionId = getOrCreateSessionId();
+		// Use sessionId as playerId for consistent identity across reconnections
+		this.playerId = this.sessionId;
+
 		this.socket = new PartySocket({
 			host: PARTYKIT_HOST,
 			room: roomCode.toLowerCase()
 		});
 
 		this.socket.addEventListener('open', () => {
-			this.playerId = this.socket!.id;
 			this.isConnected = true;
 			this.isConnecting = false;
-			this.send({ type: 'join', payload: { name: playerName, avatar } });
+			this.send({ type: 'join', payload: { name: playerName, avatar, sessionId: this.sessionId } });
 		});
 
 		this.socket.addEventListener('message', (event) => {
@@ -161,7 +187,7 @@ class GameStore {
 		}
 		this.state = null;
 		this.isConnected = false;
-		this.playerId = '';
+		// Note: We don't clear playerId or sessionId to allow reconnection with the same identity
 	}
 
 	send(message: ClientMessage) {
