@@ -178,14 +178,15 @@
 	{/if}
 </main>
 
-<!-- Settings Panel (collapsible) -->
-<div class="fixed bottom-4 right-4">
-	<details class="card p-4 bg-slate-800/90 backdrop-blur max-w-xs">
-		<summary class="cursor-pointer text-white font-semibold flex items-center gap-2">
-			⚙️ {$t('game.settings')}
+<!-- Settings Panel (collapsible) - positioned to avoid keyboard overlap -->
+<div class="settings-panel">
+	<details class="settings-details">
+		<summary class="settings-summary">
+			<span class="settings-icon">⚙️</span>
+			<span class="settings-label">{$t('game.settings')}</span>
 		</summary>
 
-		<div class="mt-4 space-y-4">
+		<div class="settings-content">
 			<div>
 				<label class="block text-sm text-slate-400 mb-1">{$t('game.category')}</label>
 				<select class="select text-sm" bind:value={category}>
@@ -230,3 +231,84 @@
 		</div>
 	</details>
 </div>
+
+<style>
+	.settings-panel {
+		position: fixed;
+		bottom: 0.5rem;
+		left: 0.5rem;
+		z-index: 40;
+	}
+
+	.settings-details {
+		background: rgba(30, 41, 59, 0.95);
+		backdrop-filter: blur(8px);
+		border-radius: 0.75rem;
+		border: 1px solid rgba(71, 85, 105, 0.5);
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+		max-width: 280px;
+	}
+
+	.settings-summary {
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 0.75rem;
+		color: white;
+		font-weight: 600;
+		font-size: 0.875rem;
+		list-style: none;
+	}
+
+	.settings-summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.settings-icon {
+		font-size: 1rem;
+	}
+
+	.settings-label {
+		display: none;
+	}
+
+	.settings-content {
+		padding: 0.75rem;
+		padding-top: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	/* Show label when expanded or on larger screens */
+	.settings-details[open] .settings-label {
+		display: inline;
+	}
+
+	@media (min-width: 640px) {
+		.settings-panel {
+			bottom: 1rem;
+			left: auto;
+			right: 1rem;
+		}
+
+		.settings-label {
+			display: inline;
+		}
+
+		.settings-summary {
+			padding: 0.75rem 1rem;
+		}
+
+		.settings-content {
+			padding: 1rem;
+			padding-top: 0.5rem;
+			gap: 1rem;
+		}
+
+		.settings-details {
+			max-width: 320px;
+		}
+	}
+</style>
