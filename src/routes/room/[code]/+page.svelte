@@ -140,12 +140,12 @@
 				</div>
 			</div>
 		</div>
-	{:else if store.isConnecting}
-		<!-- Connecting -->
+	{:else if store.isConnecting || (store.isConnected && !store.state)}
+		<!-- Connecting or waiting for state -->
 		<div class="flex-1 flex items-center justify-center">
 			<div class="text-center">
-				<div class="text-4xl animate-bounce mb-4">🔌</div>
-				<p class="text-slate-400">{$t('room.connecting')}</p>
+				<div class="text-4xl animate-bounce mb-4">{store.isConnecting ? '🔌' : '⏳'}</div>
+				<p class="text-slate-400">{store.isConnecting ? $t('room.connecting') : $t('room.loadingRoom')}</p>
 			</div>
 		</div>
 	{:else if store.error && !store.isConnected}
@@ -410,9 +410,12 @@
 			</div>
 		{/if}
 	{:else}
-		<!-- No state yet -->
+		<!-- Fallback loading state -->
 		<div class="flex-1 flex items-center justify-center">
-			<div class="text-slate-400">{$t('room.loadingRoom')}</div>
+			<div class="text-center">
+				<div class="text-4xl animate-bounce mb-4">⏳</div>
+				<p class="text-slate-400">{$t('room.loadingRoom')}</p>
+			</div>
 		</div>
 	{/if}
 </main>
