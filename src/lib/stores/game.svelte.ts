@@ -8,6 +8,7 @@ import type {
 	RoundState,
 	CompetitivePlayerState
 } from '$lib/types/game';
+import { soundManager } from './sound.svelte';
 
 // PartyKit host - update this after deployment
 const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST || 'localhost:1999';
@@ -198,9 +199,15 @@ class GameStore {
 
 	handleMessage(message: ServerMessage) {
 		switch (message.type) {
-			case 'state_update':
+			case 'state_update': {
+				const prevStatus = this.state?.status;
 				this.state = message.payload;
+				// Play game start sound when transitioning to playing
+				if (prevStatus !== 'playing' && message.payload.status === 'playing') {
+					soundManager.play('gameStart');
+				}
 				break;
+			}
 			case 'player_joined':
 				// Handled by state_update
 				break;
@@ -209,18 +216,30 @@ class GameStore {
 				break;
 			case 'letter_guessed':
 				this.lastGuessResult = message.payload;
+				// Play correct/wrong sound based on guess result
+				if (message.payload.correct) {
+					soundManager.play('correct');
+				} else {
+					soundManager.play('wrong');
+				}
 				setTimeout(() => {
 					this.lastGuessResult = null;
 				}, 1000);
 				break;
 			case 'round_ended':
-				// Handled by state_update
+				// Play win/lose sound based on round result
+				if (message.payload.winnerId) {
+					soundManager.play('win');
+				} else {
+					soundManager.play('lose');
+				}
 				break;
 			case 'game_ended':
-				// Handled by state_update
+				// Handled by state_update - sound already played on round_ended
 				break;
 			case 'turn_timeout':
-				// Could add visual feedback here
+				// Play wrong sound for timeout
+				soundManager.play('wrong');
 				break;
 			case 'error':
 				this.error = message.payload.message;
@@ -303,6 +322,7 @@ class SinglePlayerStore {
 
 		if (isCorrect) {
 			this.revealedLetters = [...this.revealedLetters, normalizedLetter];
+			soundManager.play('correct');
 
 			// Check win
 			const allRevealed = [...normalizedWord].every(
@@ -313,14 +333,17 @@ class SinglePlayerStore {
 				this.roundsWon++;
 				this.roundsPlayed++;
 				this.calculateScore();
+				soundManager.play('win');
 			}
 		} else {
 			this.wrongLetters = [...this.wrongLetters, normalizedLetter];
+			soundManager.play('wrong');
 
 			// Check lose
 			if (this.wrongLetters.length >= this.maxAttempts) {
 				this.gameStatus = 'lost';
 				this.roundsPlayed++;
+				soundManager.play('lose');
 			}
 		}
 

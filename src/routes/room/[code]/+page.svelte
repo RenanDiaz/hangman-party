@@ -13,6 +13,7 @@
 	import Scoreboard from '$lib/components/Scoreboard.svelte';
 	import TurnTimer from '$lib/components/TurnTimer.svelte';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import SoundToggle from '$lib/components/SoundToggle.svelte';
 
 	const store = gameStore;
 
@@ -71,8 +72,9 @@
 </script>
 
 <main class="flex-1 flex flex-col p-4">
-	<!-- Language Switcher -->
-	<div class="fixed safe-top right-4 z-50">
+	<!-- Language Switcher & Sound Toggle -->
+	<div class="fixed safe-top right-4 z-50 flex gap-2">
+		<SoundToggle />
 		<LanguageSwitcher />
 	</div>
 

@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { t, locale } from 'svelte-i18n';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import SoundToggle from '$lib/components/SoundToggle.svelte';
 
 	let roomCode = $state('');
 	let showJoinInput = $state(false);
@@ -35,8 +36,9 @@
 </script>
 
 <main class="flex-1 flex flex-col items-center justify-center p-4">
-	<!-- Language Switcher -->
-	<div class="fixed safe-top right-4 z-50">
+	<!-- Language Switcher & Sound Toggle -->
+	<div class="fixed safe-top right-4 z-50 flex gap-2">
+		<SoundToggle />
 		<LanguageSwitcher />
 	</div>
 
