@@ -195,6 +195,8 @@ function normalizeWord(word: string): string {
 export default class HangmanParty implements Party.Server {
 	state: GameState;
 	turnTimer: ReturnType<typeof setTimeout> | null = null;
+	// Map sessionId -> connectionId for sending messages to the right connection
+	sessionToConnection: Map<string, string> = new Map();
 
 	constructor(readonly room: Party.Room) {
 		this.state = this.getInitialState();
@@ -235,11 +237,23 @@ export default class HangmanParty implements Party.Server {
 		this.room.broadcast(JSON.stringify(message));
 	}
 
-	sendTo(connectionId: string, message: unknown) {
+	sendTo(playerId: string, message: unknown) {
+		// playerId is the sessionId, so we need to find the actual connection
+		const connectionId = this.sessionToConnection.get(playerId) || playerId;
 		const conn = [...this.room.getConnections()].find(c => c.id === connectionId);
 		if (conn) {
 			conn.send(JSON.stringify(message));
 		}
+	}
+
+	// Helper to get sessionId from connection
+	getSessionId(conn: Party.Connection): string | null {
+		for (const [sid, cid] of this.sessionToConnection.entries()) {
+			if (cid === conn.id) {
+				return sid;
+			}
+		}
+		return null;
 	}
 
 	onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
@@ -248,9 +262,22 @@ export default class HangmanParty implements Party.Server {
 	}
 
 	onClose(conn: Party.Connection) {
-		const player = this.state.players.find(p => p.id === conn.id);
+		// Find the sessionId for this connection
+		let sessionId: string | null = null;
+		for (const [sid, cid] of this.sessionToConnection.entries()) {
+			if (cid === conn.id) {
+				sessionId = sid;
+				break;
+			}
+		}
+
+		const player = sessionId ? this.state.players.find(p => p.id === sessionId) : null;
 		if (player) {
 			player.isConnected = false;
+			// Remove the connection mapping (will be re-added on reconnect)
+			if (sessionId) {
+				this.sessionToConnection.delete(sessionId);
+			}
 
 			// If all players disconnected, reset game after a timeout
 			const connectedPlayers = this.state.players.filter(p => p.isConnected);
@@ -265,14 +292,11 @@ export default class HangmanParty implements Party.Server {
 				}, 5 * 60 * 1000);
 			}
 
-			// Transfer host if needed
-			if (player.isHost && connectedPlayers.length > 0) {
-				player.isHost = false;
-				connectedPlayers[0].isHost = true;
-				this.state.hostId = connectedPlayers[0].id;
-			}
+			// Note: We do NOT transfer host when player disconnects temporarily
+			// The host will be restored when they reconnect
+			// Only transfer if the player explicitly leaves (handleLeave)
 
-			this.broadcast({ type: 'player_left', payload: { playerId: conn.id } });
+			this.broadcast({ type: 'player_left', payload: { playerId: player.id } });
 			this.broadcast({ type: 'state_update', payload: this.state });
 			this.saveState();
 		}
@@ -316,17 +340,35 @@ export default class HangmanParty implements Party.Server {
 		}
 	}
 
-	handleJoin(payload: { name: string; avatar: string }, sender: Party.Connection) {
-		// Check if player already exists (reconnection)
-		const existingPlayer = this.state.players.find(p => p.id === sender.id);
+	handleJoin(payload: { name: string; avatar: string; sessionId: string }, sender: Party.Connection) {
+		const sessionId = payload.sessionId;
+
+		// Update the session -> connection mapping
+		this.sessionToConnection.set(sessionId, sender.id);
+
+		// Check if player already exists (reconnection) using sessionId
+		const existingPlayer = this.state.players.find(p => p.id === sessionId);
 		if (existingPlayer) {
+			// Reconnection - restore the player
 			existingPlayer.isConnected = true;
 			existingPlayer.name = payload.name;
 			existingPlayer.avatar = payload.avatar;
+
+			// If this player was the host and no one else is host, restore their host status
+			if (this.state.hostId === sessionId) {
+				existingPlayer.isHost = true;
+				// Remove host from any other player who might have been temporarily assigned
+				for (const p of this.state.players) {
+					if (p.id !== sessionId && p.isHost) {
+						p.isHost = false;
+					}
+				}
+			}
 		} else {
+			// New player
 			const isHost = this.state.players.length === 0;
 			const newPlayer: Player = {
-				id: sender.id,
+				id: sessionId,
 				name: payload.name,
 				avatar: payload.avatar,
 				score: 0,
@@ -334,10 +376,10 @@ export default class HangmanParty implements Party.Server {
 				isConnected: true
 			};
 			this.state.players.push(newPlayer);
-			this.state.scores[sender.id] = 0;
+			this.state.scores[sessionId] = 0;
 
 			if (isHost) {
-				this.state.hostId = sender.id;
+				this.state.hostId = sessionId;
 			}
 
 			this.broadcast({ type: 'player_joined', payload: newPlayer });
@@ -348,11 +390,23 @@ export default class HangmanParty implements Party.Server {
 	}
 
 	handleLeave(sender: Party.Connection) {
-		const playerIndex = this.state.players.findIndex(p => p.id === sender.id);
+		// Find the sessionId for this connection
+		let sessionId: string | null = null;
+		for (const [sid, cid] of this.sessionToConnection.entries()) {
+			if (cid === sender.id) {
+				sessionId = sid;
+				break;
+			}
+		}
+
+		if (!sessionId) return;
+
+		const playerIndex = this.state.players.findIndex(p => p.id === sessionId);
 		if (playerIndex !== -1) {
 			const player = this.state.players[playerIndex];
 			this.state.players.splice(playerIndex, 1);
-			delete this.state.scores[sender.id];
+			delete this.state.scores[sessionId];
+			this.sessionToConnection.delete(sessionId);
 
 			// Transfer host if needed
 			if (player.isHost && this.state.players.length > 0) {
@@ -365,21 +419,24 @@ export default class HangmanParty implements Party.Server {
 				this.state.status = 'lobby';
 			}
 
-			this.broadcast({ type: 'player_left', payload: { playerId: sender.id } });
+			this.broadcast({ type: 'player_left', payload: { playerId: sessionId } });
 			this.broadcast({ type: 'state_update', payload: this.state });
 			this.saveState();
 		}
 	}
 
 	handleUpdateConfig(config: Partial<GameConfig>, sender: Party.Connection) {
-		const player = this.state.players.find(p => p.id === sender.id);
+		const sessionId = this.getSessionId(sender);
+		if (!sessionId) return;
+
+		const player = this.state.players.find(p => p.id === sessionId);
 		if (!player?.isHost) {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Only host can update config' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Only host can update config' } });
 			return;
 		}
 
 		if (this.state.status !== 'lobby' && this.state.status !== 'configuring') {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Cannot update config during game' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Cannot update config during game' } });
 			return;
 		}
 
@@ -390,15 +447,18 @@ export default class HangmanParty implements Party.Server {
 	}
 
 	handleStartGame(sender: Party.Connection) {
-		const player = this.state.players.find(p => p.id === sender.id);
+		const sessionId = this.getSessionId(sender);
+		if (!sessionId) return;
+
+		const player = this.state.players.find(p => p.id === sessionId);
 		if (!player?.isHost) {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Only host can start the game' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Only host can start the game' } });
 			return;
 		}
 
 		// Validate player count for multiplayer modes
 		if (this.state.config.mode !== 'single' && this.state.players.length < 2) {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Need at least 2 players for multiplayer' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Need at least 2 players for multiplayer' } });
 			return;
 		}
 
@@ -490,35 +550,38 @@ export default class HangmanParty implements Party.Server {
 	}
 
 	handleGuessLetter(letter: string, sender: Party.Connection) {
+		const sessionId = this.getSessionId(sender);
+		if (!sessionId) return;
+
 		if (this.state.status !== 'playing') {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Game is not in progress' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Game is not in progress' } });
 			return;
 		}
 
 		const normalizedLetter = letter.toUpperCase();
 
 		if (this.state.config.mode === 'competitive') {
-			this.handleCompetitiveGuess(normalizedLetter, sender);
+			this.handleCompetitiveGuess(normalizedLetter, sessionId);
 		} else {
-			this.handleTeamGuess(normalizedLetter, sender);
+			this.handleTeamGuess(normalizedLetter, sessionId);
 		}
 	}
 
-	handleTeamGuess(letter: string, sender: Party.Connection) {
+	handleTeamGuess(letter: string, sessionId: string) {
 		if (!this.state.round) return;
 
 		// In team mode, check if it's this player's turn
 		if (this.state.config.mode === 'team') {
 			const currentPlayer = this.state.players[this.state.round.currentPlayerIndex];
-			if (currentPlayer?.id !== sender.id) {
-				this.sendTo(sender.id, { type: 'error', payload: { message: 'Not your turn' } });
+			if (currentPlayer?.id !== sessionId) {
+				this.sendTo(sessionId, { type: 'error', payload: { message: 'Not your turn' } });
 				return;
 			}
 		}
 
 		// Check if letter already guessed
 		if (this.state.round.revealedLetters.includes(letter) || this.state.round.wrongLetters.includes(letter)) {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Letter already guessed' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Letter already guessed' } });
 			return;
 		}
 
@@ -533,7 +596,7 @@ export default class HangmanParty implements Party.Server {
 
 		this.broadcast({
 			type: 'letter_guessed',
-			payload: { playerId: sender.id, letter, correct: isCorrect }
+			payload: { playerId: sessionId, letter, correct: isCorrect }
 		});
 
 		// Check win/lose conditions
@@ -559,13 +622,13 @@ export default class HangmanParty implements Party.Server {
 					p.score = this.state.scores[p.id];
 				}
 			} else {
-				this.state.scores[sender.id] += score;
-				const player = this.state.players.find(p => p.id === sender.id);
-				if (player) player.score = this.state.scores[sender.id];
+				this.state.scores[sessionId] += score;
+				const player = this.state.players.find(p => p.id === sessionId);
+				if (player) player.score = this.state.scores[sessionId];
 			}
 
-			this.state.roundWinners.push(sender.id);
-			this.endRound(sender.id);
+			this.state.roundWinners.push(sessionId);
+			this.endRound(sessionId);
 		} else if (this.state.round.wrongLetters.length >= this.state.config.maxAttempts) {
 			// Round lost
 			this.endRound(null);
@@ -581,21 +644,21 @@ export default class HangmanParty implements Party.Server {
 		this.saveState();
 	}
 
-	handleCompetitiveGuess(letter: string, sender: Party.Connection) {
+	handleCompetitiveGuess(letter: string, sessionId: string) {
 		if (!this.state.competitiveStates) return;
 
-		const playerState = this.state.competitiveStates.find(s => s.playerId === sender.id);
+		const playerState = this.state.competitiveStates.find(s => s.playerId === sessionId);
 		if (!playerState) return;
 
 		// Check if player already finished
 		if (playerState.hasWon || playerState.hasLost) {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'You have already finished this round' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'You have already finished this round' } });
 			return;
 		}
 
 		// Check if letter already guessed
 		if (playerState.revealedLetters.includes(letter) || playerState.wrongLetters.includes(letter)) {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Letter already guessed' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Letter already guessed' } });
 			return;
 		}
 
@@ -610,7 +673,7 @@ export default class HangmanParty implements Party.Server {
 
 		this.broadcast({
 			type: 'letter_guessed',
-			payload: { playerId: sender.id, letter, correct: isCorrect }
+			payload: { playerId: sessionId, letter, correct: isCorrect }
 		});
 
 		// Check win/lose for this player
@@ -630,9 +693,9 @@ export default class HangmanParty implements Party.Server {
 				playerState.finishTime - (this.state.round?.startTime || Date.now()),
 				playerState.word.replace(/\s/g, '').length
 			);
-			this.state.scores[sender.id] += score;
-			const player = this.state.players.find(p => p.id === sender.id);
-			if (player) player.score = this.state.scores[sender.id];
+			this.state.scores[sessionId] += score;
+			const player = this.state.players.find(p => p.id === sessionId);
+			if (player) player.score = this.state.scores[sessionId];
 		} else if (playerState.wrongLetters.length >= this.state.config.maxAttempts) {
 			playerState.hasLost = true;
 			playerState.finishTime = Date.now();
@@ -683,14 +746,17 @@ export default class HangmanParty implements Party.Server {
 	}
 
 	handleNextRound(sender: Party.Connection) {
-		const player = this.state.players.find(p => p.id === sender.id);
+		const sessionId = this.getSessionId(sender);
+		if (!sessionId) return;
+
+		const player = this.state.players.find(p => p.id === sessionId);
 		if (!player?.isHost) {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Only host can start next round' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Only host can start next round' } });
 			return;
 		}
 
 		if (this.state.status !== 'between_rounds') {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Cannot start next round now' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Cannot start next round now' } });
 			return;
 		}
 
@@ -718,9 +784,12 @@ export default class HangmanParty implements Party.Server {
 	}
 
 	handleRestartGame(sender: Party.Connection) {
-		const player = this.state.players.find(p => p.id === sender.id);
+		const sessionId = this.getSessionId(sender);
+		if (!sessionId) return;
+
+		const player = this.state.players.find(p => p.id === sessionId);
 		if (!player?.isHost) {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Only host can restart the game' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Only host can restart the game' } });
 			return;
 		}
 
@@ -741,14 +810,17 @@ export default class HangmanParty implements Party.Server {
 	}
 
 	handleKickPlayer(playerId: string, sender: Party.Connection) {
-		const player = this.state.players.find(p => p.id === sender.id);
+		const sessionId = this.getSessionId(sender);
+		if (!sessionId) return;
+
+		const player = this.state.players.find(p => p.id === sessionId);
 		if (!player?.isHost) {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Only host can kick players' } });
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Only host can kick players' } });
 			return;
 		}
 
-		if (playerId === sender.id) {
-			this.sendTo(sender.id, { type: 'error', payload: { message: 'Cannot kick yourself' } });
+		if (playerId === sessionId) {
+			this.sendTo(sessionId, { type: 'error', payload: { message: 'Cannot kick yourself' } });
 			return;
 		}
 
