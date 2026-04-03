@@ -7,8 +7,10 @@
 </script>
 
 <svelte:head>
-	<title>{$t('meta.title')}</title>
-	<meta name="description" content={$t('meta.description')} />
+	{#if !$isLoading}
+		<title>{$t('meta.title')}</title>
+		<meta name="description" content={$t('meta.description')} />
+	{/if}
 </svelte:head>
 
 {#if $isLoading}
